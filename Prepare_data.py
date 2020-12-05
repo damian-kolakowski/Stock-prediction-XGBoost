@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(color_codes=True)
 from pandas_datareader import data as pdr
-import fix_yahoo_finance
+import yfinance
 
 class Prepare_data(object):
 
@@ -41,12 +41,17 @@ class Prepare_data(object):
         days = 1
         self.data = self.ForceIndex(self.data,days)
 
-        self.preprocessed_data = self.rescale_data(self.data)
+        self.preprocessed_data = self.rescale(self.data)
 
+    def rescale(self, data):
+        data = data.dropna().astype(float)
+        data = sklearn.preprocessing.scale(data)
+        data = pd.DataFrame(data, columns=['Date','Open','High','Low','Close','Adj Close','Volume','High','EVM','SMA_10','EWMA_10','SMA_50','EWMA_50','SMA_100','EWMA_100','SMA_200','EWMA_200', 'ROW', 'x','ForceIndex'])
+        return data
 
     def CCI(self, data, days):
         TP = (data['High'] + data['Low'] + data['Close']) / 3
-        CCI = pd.Series((TP - pd.rolling_mean(TP, days)) / (0.015 * pd.rolling_std(TP, days)),
+        CCI = pd.Series((TP - TP.rolling(days).mean()) / (0.015 * TP.rolling(days).std()),
         name = 'CCI')
         data = data.join(CCI)
         return data
@@ -55,17 +60,17 @@ class Prepare_data(object):
         dm = ((data['High'] + data['Low'])/2) - ((data['High'].shift(1) + data['Low'].shift(1))/2)
         br = (data['Volume'] / 100000000) / ((data['High'] - data['Low']))
         EVM = dm / br 
-        EVM_MA = pd.Series(pd.rolling_mean(EVM, days), name = 'EVM') 
+        EVM_MA = pd.Series(EVM.rolling(days).mean(), name = 'EVM') 
         data = data.join(EVM_MA) 
         return data
 
     def SMA(self,data, days): 
-        sma = pd.Series(pd.rolling_mean(data['Close'], days), name = 'SMA_' + str(days))
+        sma = pd.Series(data['Close'].rolling(days).mean(), name = 'SMA_' + str(days))
         data = data.join(sma) 
         return data
 
     def EWMA(self, data, days):
-        ema = pd.Series(pd.ewma(data['Close'], span = days, min_periods = days - 1), 
+        ema = pd.Series(data['Close'].ewm(span = days, min_periods = days - 1).mean(), 
         name = 'EWMA_' + str(days))
         data = data.join(ema) 
         return data
@@ -89,11 +94,6 @@ class Prepare_data(object):
         data = data.join(FI) 
         return data
 
-	def rescale(data):
-		data = data.dropna().astype('float')
-		data = sklearn.preprocessing.scale(data)
-		data = pd.DataFrame(data, columns=data.columns)
-		return data
 		
 if __name__ == '__main__':
 	prepare_data = Prepare_data()

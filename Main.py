@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(color_codes=True)
 from pandas_datareader import data as pdr
-import fix_yahoo_finance
+import yfinance
+import Prepare_data
 
 class Main(object):
 
@@ -25,6 +26,7 @@ class Main(object):
 	
 	def prepare_X_y(self, data):
 		X = data.values
+		print(data.columns)
 		ind = list(data.columns).index('Open')
 		y = []
 		for i in range(X.shape[0]-1):
@@ -63,7 +65,7 @@ class Main(object):
 		print(train_sampled['target'].value_counts())
 		train_sampled['target'].value_counts().plot(kind='bar', title='Count (target)')
 		plt.show()
-	return train_sampled
+		return train_sampled
 	
 	def train_model(self, X_train, y_train):
 		model = xgb.XGBClassifier()
@@ -85,7 +87,7 @@ class Main(object):
 		plt.show()
 		
 if __name__ == '__main__':
-	Prepare_data = Prepare_data()
+	Prepare_data = Prepare_data.Prepare_data()
 	Main = Main()
 	Main.data = Prepare_data.preprocessed_data
 	X,y = Main.prepare_X_y(Main.data)
